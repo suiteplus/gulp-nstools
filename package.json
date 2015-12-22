@@ -1,0 +1,35 @@
+{
+  "name": "ns-bundle-ci",
+  "version": "0.1.0",
+  "description": "Continues Integration tool for NetSuite",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/suiteplus/ns-bundle-ci.git"
+  },
+  "keywords": [
+    "netsuite",
+    "suiteplus",
+    "continues",
+    "integration",
+    "ci",
+    "suitescript",
+    "suite",
+    "s+"
+  ],
+  "author": "daniel.joppi@suiteplus.com",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/suiteplus/ns-bundle-ci/issues"
+  },
+  "homepage": "https://github.com/suiteplus/ns-bundle-ci#readme",
+  "dependencies": {
+    "browserify": "^12.0.1",
+    "glob": "^6.0.1",
+    "npm": "^3.5.2",
+    "through2": "^2.0.0"
+  }
+}
