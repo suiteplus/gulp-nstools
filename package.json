@@ -1,5 +1,5 @@
 {
-  "name": "ns-bundle-ci",
+  "name": "gulp-nstools",
   "version": "0.1.0",
   "description": "Continues Integration tool for NetSuite",
   "main": "index.js",
@@ -8,9 +8,10 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/suiteplus/ns-bundle-ci.git"
+    "url": "git+https://github.com/suiteplus/gulp-nstools.git"
   },
   "keywords": [
+    "gulpplugin",
     "netsuite",
     "suiteplus",
     "continues",
@@ -23,9 +24,9 @@
   "author": "daniel.joppi@suiteplus.com",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/suiteplus/ns-bundle-ci/issues"
+    "url": "https://github.com/suiteplus/gulp-nstools/issues"
   },
-  "homepage": "https://github.com/suiteplus/ns-bundle-ci#readme",
+  "homepage": "https://github.com/suiteplus/gulp-nstools#readme",
   "dependencies": {
     "browserify": "^12.0.1",
     "glob": "^6.0.1",
