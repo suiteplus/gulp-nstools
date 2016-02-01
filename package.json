@@ -1,6 +1,6 @@
 {
   "name": "gulp-nstools",
-  "version": "0.2.0-pre",
+  "version": "0.1.1",
   "description": "Continues Integration tool for NetSuite",
   "main": "index.js",
   "scripts": {
@@ -31,7 +31,7 @@
     "gulp": "^3.9.0",
     "gulp-util": "^3.0.7",
     "npm": "^3.5.2",
-    "nsify": "^0.2.0",
+    "nsify": "^0.2.1",
     "through2": "^2.0.0"
   },
   "devDependencies": {
