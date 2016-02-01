@@ -3,5 +3,5 @@
  */
 'use strict';
 
-exports.bundle = require('./tasks/bundle');
+exports.package = require('./tasks/package');
 
