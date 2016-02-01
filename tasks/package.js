@@ -1,63 +1,112 @@
 'use strict';
 var through = require('through2'),
-    glob = require('glob'),
+    nsify = require('nsify'),
     fs = require('fs'),
-    path = require('path');
+    path = require('path'),
+    gulp = require('gulp'),
+    gulpLoadPlugins = require('gulp-load-plugins'),
+    plugins = gulpLoadPlugins();
 
-var appRoot = process.cwd();
+const appRoot = process.cwd();
 
-module.exports = through.obj(function (chunk, enc, callback) {
-    let bundlePath = chunk.path.substr(chunk.cwd.length + 1),
-        bundleDir = bundlePath.replace('bundle.json', ''),
-        bundle = require(`${appRoot}/${bundlePath}`),
-        libs = Object.keys(bundle.libs);
+var libraryInfo = require('../lib/library-info'),
+    pack = require(`${appRoot}/package.json`),
+    fileCache = [],
+    concatDepends = {};
 
-    for (let i = 0; i < libs.length; i++) {
-        let orig = libs[i],
-            dest = bundle.libs[orig];
+module.exports = () => {
+    return through.obj(function (chunk, enc, callback) {
+        let bundleCfgPath = chunk.path.substr(chunk.cwd.length + 1),
+            bundleCfgDir = path.dirname(bundleCfgPath),
+            bundleCfg = require(`${appRoot}/${bundleCfgPath}`),
+            bundleCfgName = bundleCfg.name || path.basename(bundleCfgDir),
+            bundleScripts = bundleCfg.scripts;
 
-        let origDir;
-        if (~orig.indexOf(':')) {
-            let oo = orig.split(':');
-            origDir = oo[0];
-            orig = oo[1];
-        } else {
-            origDir = bundleDir;
-        }
+        let actual = 0,
+            verifyNext = () => {
+                if (++actual === bundleScripts.length) callback();
+            };
 
-        let origBaseDir = path.join(appRoot, origDir, 'src'),
-            origPath = path.join(origBaseDir, orig),
-            files = glob.sync(origPath);
+        let that = this;
+        for (let i = 0; i < bundleScripts.length; i++) {
+            let relativePath = bundleScripts[i],
+                ext = ~relativePath.indexOf('.js') ? '' : '.js',
+                scriptPath = `${appRoot}/${bundleCfgDir}/src/${relativePath}${ext}`;
+            console.log(scriptPath);
+            if (!fs.existsSync(scriptPath)) {
+                continue;
+            }
 
-        if (dest.indexOf('/') !== 0) dest = `/${dest}`;
+            let script = nsify.annotation(scriptPath),
+                custom = script.custom || {};
+            custom.clientProof = custom.clientProof === 'true' || script.type === 'client';
 
-        let destBaseDir = distDir;
-        path.dirname(dest).split('/').forEach((dir) => {
-            destBaseDir = path.join(destBaseDir, dir);
-            !fs.existsSync(destBaseDir) && fs.mkdirSync(destBaseDir);
-        });
+            let finalName = `${script.id}.js`,
+                dirDest = `.dist/${pack.name}/${bundleCfgName}/`,
+                files = [
+                    [scriptPath, {
+                        alias: script.alias,
+                        name: finalName,
+                        dir: dirDest,
+                        config: custom || {}
+                    }]
+                ];
 
-        for (let f = 0; f < files.length; f++) {
-            let file = files[f],
-                stat = fs.statSync(file);
-            if (stat.isFile()) {
-                //console.log('>>>> file', file);
-                //console.log('>>>> base', origBaseDir);
-                //console.log('>>>> dest', dest);
-                let content = fs.readFileSync(file, 'utf8'),
-                    fileName = path.basename(file),
-                    othersDir = path.dirname(file).replace(origBaseDir, ''),
-                    destFileDir = destBaseDir;
+            script.libs.forEach(lib => {
+                let scriptLib = libraryInfo(lib, {dir: bundleCfgDir, id: script.id});
+                if (!scriptLib) return;
 
-                othersDir.split('/').forEach((dir) => {
-                    destFileDir = path.join(destFileDir, dir);
-                    !fs.existsSync(destFileDir) && fs.mkdirSync(destFileDir);
-                });
+                files.push([scriptLib.path, {
+                    alias: scriptLib.alias,
+                    name: scriptLib.finalName,
+                    dir: scriptLib.dirDest,
+                    config: scriptLib.custom || {}
+                }]);
+            });
 
-                let destPath = path.join(destFileDir, fileName);
-                fs.writeFileSync(destPath, content, 'utf8');
+            let actual = 0,
+                verifyFiles = () => {
+                    if (++actual === files.length) verifyNext();
+                };
+
+            for (let f = 0; f < files.length; f++) {
+                let line = files[f],
+                    fileJs = line[0],
+                    sobj = line[1],
+                    name = sobj.name,
+                    config = sobj.config;
+
+                if (name.indexOf('_') === 0) {
+                    name = name.substr(1);
+                }
+
+                let cache = path.join(sobj.dir, name);
+                if (config.concat) {
+                    let dirPath = path.dirname(fileJs),
+                        concat = config.concat.split(',').map(lib => {
+                            let libPath = path.join(dirPath, lib),
+                                scriptLib = libraryInfo(libPath, {id: script.id});
+                            if (!scriptLib) return;
+                            return path.join(scriptLib.dirDest, `${scriptLib.finalName}.js`);
+                        }).filter(lib => !!lib);
+
+                    concatDepends[cache] = concat;
+                }
+                if (~fileCache.indexOf(cache)) {
+                    verifyFiles();
+                    continue;
+                } else {
+                    fileCache.push(cache);
+                }
+
+                nsify(fileJs)
+                    .pipe(through.obj(function (chunk, enc, callback) {
+                        that.push(chunk);
+                        verifyFiles();
+                        callback();
+                    }))
+                    .on('error', plugins.util.log)
             }
         }
-    }
-    callback();
-});
+    });
+};
