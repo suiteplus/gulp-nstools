@@ -10,11 +10,10 @@ var through = require('through2'),
 const appRoot = process.cwd();
 
 var libraryInfo = require('../lib/library-info'),
-    pack = require(`${appRoot}/package.json`),
-    fileCache = [],
-    concatDepends = {};
+    pack = require(`${appRoot}/package.json`);
 
 module.exports = () => {
+    let fileCache = [];
     return through.obj(function (chunk, enc, callback) {
         let bundleCfgPath = chunk.path.substr(chunk.cwd.length + 1),
             bundleCfgDir = path.dirname(bundleCfgPath),
@@ -24,7 +23,9 @@ module.exports = () => {
 
         let actual = 0,
             verifyNext = () => {
-                if (++actual === bundleScripts.length) callback();
+                if (++actual === bundleScripts.length) {
+                    callback();
+                }
             };
 
         let that = this;
@@ -32,7 +33,7 @@ module.exports = () => {
             let relativePath = bundleScripts[i],
                 ext = ~relativePath.indexOf('.js') ? '' : '.js',
                 scriptPath = `${appRoot}/${bundleCfgDir}/src/${relativePath}${ext}`;
-            console.log(scriptPath);
+
             if (!fs.existsSync(scriptPath)) {
                 continue;
             }
@@ -80,30 +81,17 @@ module.exports = () => {
                     name = name.substr(1);
                 }
 
-                let cache = path.join(sobj.dir, name);
-                if (config.concat) {
-                    let dirPath = path.dirname(fileJs),
-                        concat = config.concat.split(',').map(lib => {
-                            let libPath = path.join(dirPath, lib),
-                                scriptLib = libraryInfo(libPath, {id: script.id});
-                            if (!scriptLib) return;
-                            return path.join(scriptLib.dirDest, `${scriptLib.finalName}.js`);
-                        }).filter(lib => !!lib);
-
-                    concatDepends[cache] = concat;
-                }
-                if (~fileCache.indexOf(cache)) {
+                if (~fileCache.indexOf(fileJs)) {
                     verifyFiles();
                     continue;
                 } else {
-                    fileCache.push(cache);
+                    fileCache.push(fileJs);
                 }
 
                 nsify(fileJs)
-                    .pipe(through.obj(function (chunk, enc, callback) {
+                    .pipe(through.obj(function (chunk) {
                         that.push(chunk);
                         verifyFiles();
-                        callback();
                     }))
                     .on('error', plugins.util.log)
             }
