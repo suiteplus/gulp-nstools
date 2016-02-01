@@ -1,12 +1,10 @@
 'use strict';
-var gulp = require('gulp'),
-    npm = require('npm'),
+var npm = require('npm'),
     through = require('through2'),
-    paths = require('./paths'),
     loadConfig = require('../lib/load-config');
 
-exports = () => {
-    let packager = through.obj(function (chunk, enc, callback) {
+module.exports = () => {
+    return through.obj(function (chunk, enc, callback) {
         let bundle = loadConfig(chunk).data,
             libs = bundle.libs,
             packs = libs ? Object.keys(libs) : [],
@@ -26,7 +24,4 @@ exports = () => {
             return callback();
         }
     });
-
-    return gulp.src(paths.bundle)
-        .pipe(packager);
 };
