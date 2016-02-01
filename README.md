@@ -59,6 +59,14 @@ gulp.task('pacakge:generate', function() {
 });
 ```
 
+## Install
+
+ ... **todo** - manager modules dependencies using `npm`.
+ 
+## deploy
+
+ ... **todo** - deploys packages into NetSuite ... and configure SuiteScripts
+
 [npm-url]: https://npmjs.org/package/gulp-nstools
 [npm-image]: http://img.shields.io/npm/v/gulp-nstools.svg
 
